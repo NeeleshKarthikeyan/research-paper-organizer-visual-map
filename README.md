@@ -1,4 +1,4 @@
 # Research Paper Organizer and Visual Map
 
 ## Kaggle Capstone MVP: Research Paper Triage Agent
-This repo contains the code for a python based research dicovery tool, which can be used for ranking, organizing and mapping research papers, specifically around the topic of ML. The idea is to create a visual map of dicoveries to better understand the directions of ML and AI research.
+This repository contains the early capstone version of a larger research paper organiser and visual mapping system. The submitted MVP focuses on the Research Paper Triage Agent: an agent that classifies papers, estimates difficulty, extracts prerequisites, and recommends whether to read, skim, save, or skip.
