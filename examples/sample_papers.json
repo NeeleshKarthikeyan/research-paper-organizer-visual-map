@@ -1,0 +1,57 @@
+[
+  {
+    "title": "A Comprehensive Survey of Autonomous LLM Agents",
+    "abstract": "We present a detailed survey and taxonomy of autonomous large language model agents. We review recent developments in planning, tool use, memory architectures, and multi-agent collaboration across diverse domains.",
+    "user_level": "beginner",
+    "user_goal": "Understand the current landscape of LLM agents",
+    "source_url": "https://arxiv.org/abs/2401.00001",
+    "authors": ["Alice Smith", "Bob Jones"],
+    "published_date": "2024-01-15",
+    "source": "manual",
+    "category": "cs.AI"
+  },
+  {
+    "title": "AgentBench: Evaluating LLMs as Autonomous Agents on Complex Tasks",
+    "abstract": "We introduce AgentBench, a multi-dimensional benchmark and leaderboard for evaluating large language models as autonomous agents. We systematically measure performance across tools, operating systems, web interaction, and reasoning environments.",
+    "user_level": "intermediate",
+    "user_goal": "Evaluate agent capabilities across standardized benchmarks",
+    "source_url": "https://arxiv.org/abs/2401.00002",
+    "authors": ["Charlie Brown", "Diana Prince"],
+    "published_date": "2024-02-10",
+    "source": "manual",
+    "category": "cs.CL"
+  },
+  {
+    "title": "Hierarchical Attention Transformers for Long Context Processing",
+    "abstract": "We propose a novel hierarchical attention architecture for transformer models that efficiently processes sequence lengths up to 128k tokens. We introduce a linear complexity attention mechanism and demonstrate state-of-the-art results on long-context retrieval.",
+    "user_level": "intermediate",
+    "user_goal": "Learn modern transformer architectural improvements",
+    "source_url": "https://arxiv.org/abs/2401.00003",
+    "authors": ["Eve Adams", "Frank Miller"],
+    "published_date": "2024-03-01",
+    "source": "manual",
+    "category": "cs.LG"
+  },
+  {
+    "title": "vServing: High-Throughput Distributed Serving for Large Language Models",
+    "abstract": "We present vServing, a distributed system architecture for high-throughput LLM serving and inference. We optimize memory allocation, latency, and tensor parallelism across GPU clusters under heavy concurrent throughput.",
+    "user_level": "advanced",
+    "user_goal": "Optimize deployment and serving latency for LLM infrastructure",
+    "source_url": "https://arxiv.org/abs/2401.00004",
+    "authors": ["Grace Hopper", "Hank Pym"],
+    "published_date": "2024-03-20",
+    "source": "manual",
+    "category": "cs.DC"
+  },
+  {
+    "title": "Theoretical Convergence Bounds for Non-Convex Gradient Optimization in Attention Layers",
+    "abstract": "In this paper, we establish formal mathematical theorems and proof bounds for non-convex gradient convergence in self-attention layers. We derive exact asymptotic error rates and gradient stability conditions.",
+    "user_level": "beginner",
+    "user_goal": "Explore theoretical foundations of deep learning optimization",
+    "source_url": "https://arxiv.org/abs/2401.00005",
+    "authors": ["Ian Newton", "Julia Robinson"],
+    "published_date": "2024-04-05",
+    "source": "manual",
+    "category": "math.OC"
+  }
+]

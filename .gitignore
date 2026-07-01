@@ -1,21 +1,50 @@
-# Virtual environment
-.venv/
-
-# Python cache
+# Byte-compiled / optimized files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# VS Code
-.vscode/
+# C extensions
+*.so
 
-# Environment variables / secrets
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
 .env
+.env.local
 
-# Data outputs
-data/*.json
-data/*.csv
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS files
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Operating System files
 .DS_Store
 Thumbs.db
