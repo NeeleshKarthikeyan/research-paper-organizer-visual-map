@@ -20,23 +20,26 @@ class TriageAgent:
         # 2. Classify paper type
         paper_type = tools.classify_paper_type(paper.title, paper.abstract)
 
-        # 3. Estimate difficulty
+        # 3. Extract complexity signals
+        complexity_signals = tools.extract_complexity_signals(paper.title, paper.abstract)
+
+        # 4. Estimate difficulty
         difficulty = tools.estimate_difficulty(
-            paper.title, paper.abstract, paper.user_level
+            paper.title, paper.abstract, paper.user_level, signals=complexity_signals
         )
 
-        # 4. Extract topic tags
+        # 5. Extract topic tags
         topic_tags = tools.extract_topic_tags(paper.title, paper.abstract)
 
-        # 5. Identify prerequisite concepts
+        # 6. Identify prerequisite concepts
         prerequisites = tools.identify_prerequisites(topic_tags, difficulty)
 
-        # 6. Decide recommendation and generate public explanation
+        # 7. Decide recommendation and generate public explanation
         decision, reason = tools.recommend_decision(
             paper_type, difficulty, paper.user_level, paper.user_goal
         )
 
-        # 7. Generate suggested reading path
+        # 8. Generate suggested reading path
         reading_path = tools.generate_reading_path(
             paper_type, difficulty, paper.user_level
         )
@@ -56,6 +59,7 @@ class TriageAgent:
             reading_path=reading_path,
             reason=reason,
             source_url=paper.source_url,
+            complexity_signals=complexity_signals,
         )
 
     def triage_batch(self, papers: List[PaperInput]) -> List[TriageOutput]:

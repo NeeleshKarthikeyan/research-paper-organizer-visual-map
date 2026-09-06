@@ -30,3 +30,15 @@ def test_extract_topic_tags():
     assert "agent" in tags
     assert "RAG" in tags
     assert "tool use" in tags
+
+
+def test_extract_complexity_signals():
+    signals = tools.extract_complexity_signals(
+        title="Theoretical Bounds for Gradient Descent",
+        abstract="We present a mathematical proof for convergence bound in backpropagation."
+    )
+    assert signals.has_math_complexity is True
+    assert signals.has_ml_complexity is True
+    assert signals.has_systems_complexity is False
+    assert signals.has_experimental_complexity is False
+

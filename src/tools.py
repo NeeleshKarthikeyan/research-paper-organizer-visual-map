@@ -3,8 +3,8 @@ Deterministic rule-based helper tool functions for paper analysis and triage.
 """
 
 import re
-from typing import List, Optional
-from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel
+from typing import List, Optional, Dict
+from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel, ComplexitySignals
 
 
 def classify_paper_type(title: str, abstract: str) -> PaperType:
@@ -90,28 +90,43 @@ def extract_topic_tags(title: str, abstract: str) -> List[str]:
     return tags if tags else ["general AI"]
 
 
+def extract_complexity_signals(title: str, abstract: str) -> ComplexitySignals:
+    """Extract explicit complexity signals from title and abstract text."""
+    text = f"{title} {abstract}".lower()
+    
+    # Justified minimal keyword lists for complexity dimensions
+    math_terms = ["theorem", "proof", "asymptotic", "convergence bound"]
+    ml_terms = ["gradient descent", "backpropagation", "loss landscape", "hyperparameter"]
+    systems_terms = ["throughput", "latency", "quantization", "distributed training"]
+    experimental_terms = ["ablation study", "baseline comparison", "empirical validation", "statistical significance"]
+
+    return ComplexitySignals(
+        has_math_complexity=any(t in text for t in math_terms),
+        has_ml_complexity=any(t in text for t in ml_terms),
+        has_systems_complexity=any(t in text for t in systems_terms),
+        has_experimental_complexity=any(t in text for t in experimental_terms)
+    )
+
+
 def estimate_difficulty(
-    title: str, abstract: str, user_level: UserLevel
+    title: str, abstract: str, user_level: UserLevel, signals: Optional[ComplexitySignals] = None
 ) -> DifficultyType:
-    """Estimate paper difficulty based on complexity keywords and user level context."""
+    """Estimate paper difficulty based on complexity signals and user level context."""
     text = f"{title} {abstract}".lower()
     paper_type = classify_paper_type(title, abstract)
 
-    advanced_terms = [
-        "theorem",
-        "proof",
-        "convergence",
-        "asymptotic",
-        "asynchronous",
-        "throughput",
-        "latency",
-        "kernel",
-        "quantization",
-        "gradient bounds",
-    ]
-    advanced_score = sum(1 for term in advanced_terms if term in text)
+    if signals is None:
+        signals = extract_complexity_signals(title, abstract)
 
-    if paper_type in ["theory", "systems"] or advanced_score >= 2:
+    # Count how many different complexity dimensions are present
+    advanced_score = sum([
+        signals.has_math_complexity,
+        signals.has_ml_complexity,
+        signals.has_systems_complexity,
+        signals.has_experimental_complexity
+    ])
+
+    if paper_type in ["theory", "systems"] or advanced_score >= 2 or signals.has_math_complexity:
         return "advanced"
     elif paper_type == "survey" or "introduction" in text:
         return "beginner"

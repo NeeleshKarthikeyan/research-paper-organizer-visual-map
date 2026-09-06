@@ -2,7 +2,7 @@
 Pydantic schemas for input paper metadata and output triage reports.
 """
 
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -20,6 +20,13 @@ PaperType = Literal[
     "position",
     "unknown",
 ]
+
+
+class ComplexitySignals(BaseModel):
+    has_math_complexity: bool = Field(default=False, description="Contains mathematical or theoretical terms (e.g. proof, theorem).")
+    has_ml_complexity: bool = Field(default=False, description="Contains machine learning methodology terms (e.g. gradient, backpropagation).")
+    has_systems_complexity: bool = Field(default=False, description="Contains systems or infrastructure terms (e.g. latency, throughput).")
+    has_experimental_complexity: bool = Field(default=False, description="Contains research methodology terms (e.g. ablation, baseline).")
 
 
 class PaperInput(BaseModel):
@@ -66,3 +73,4 @@ class TriageOutput(BaseModel):
     reading_path: List[str]
     reason: str
     source_url: Optional[str] = None
+    complexity_signals: Optional[ComplexitySignals] = None

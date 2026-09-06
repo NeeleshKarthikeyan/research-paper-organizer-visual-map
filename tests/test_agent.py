@@ -18,6 +18,8 @@ def test_agent_returns_valid_decision():
     assert report.title == paper.title
     assert report.decision in ["read", "skim", "save_for_later", "skip_for_now"]
     assert report.paper_type == "survey"
+    assert report.complexity_signals is not None
+    assert report.complexity_signals.has_math_complexity is False
 
 
 def test_beginner_receives_prerequisites_and_reading_path():

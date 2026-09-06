@@ -1,293 +1,151 @@
 # Research Paper Organizer & Visual Map
 
-> **Kaggle 5-Day AI Agents Intensive Capstone Project**
->
-> A modular AI-powered Research Paper Triage Agent that helps students and researchers discover, prioritise, and organise research papers while laying the foundations for an intelligent research knowledge management system.
+*A Kaggle 5-Day AI Agents Intensive Capstone Project*
 
----
+## Kaggle Capstone MVP Summary
 
-## Overview
+This repository contains the **Research Paper Triage Agent**, a lightweight CLI-based MVP developed for the Kaggle 5-Day AI Agents Intensive capstone project. 
 
-Keeping up with Artificial Intelligence research has become increasingly difficult. Thousands of papers are published every month across repositories such as arXiv, making it challenging to determine:
+The MVP agent acts as a personal research assistant. It can process local JSON files or fetch real paper metadata from the arXiv API. Using deterministic rule-based heuristics, it analyzes titles and abstracts, extracting topics, estimating difficulty, identifying prerequisite concepts, and generating personalized "read/skim/skip" recommendations with suggested reading paths.
 
-- Which papers are worth reading
-- Which papers are too advanced
-- What prerequisite knowledge is required
-- Where to begin learning a new topic
-- How individual papers fit into the wider AI landscape
+## Long-Term Vision
 
-This project addresses the first stage of that problem by building a **Research Paper Triage Agent**.
+The long-term goal of this project is to become a comprehensive research paper organizer and 3D visual mapping tool. We aim to help students and early AI researchers organize papers, discover connections between subfields, and eventually visualize entire areas of the AI field in interactive cluster maps. 
 
-Instead of simply searching for papers, the agent analyses each paper and recommends whether the user should:
+**Note on MVP Scope**: The submitted MVP focuses strictly on the text-based Research Paper Triage Agent. The full 3D visual map is *not* complete yet and is planned for future work. This MVP is not currently production-ready and serves as a foundational prototype.
 
-- 📖 Read
-- 👀 Skim
-- ⏳ Save for Later
-- ❌ Skip for Now
+## Problem
 
-The long-term goal is to evolve this project into a complete AI-powered research assistant capable of organising papers into an interactive visual knowledge graph.
+With the explosive growth of AI and ML research, beginner and intermediate students often struggle to decide which papers are worth their time. Reading a highly technical paper without the right prerequisites can be demoralizing. Students need a way to filter the noise and receive contextual reading recommendations based on their experience level.
 
----
+## Solution
 
-# Project Goals
+The **Research Paper Triage Agent** solves this by evaluating a paper’s metadata (title, abstract) against a rule-based inference engine. It outputs structured, actionable triage reports that clearly state whether a student should read, skim, or save a paper for later, alongside the prerequisites needed to understand it.
 
-The long-term vision is to build a platform that can:
+## Track Recommendation
 
-- Search multiple research repositories
-- Automatically organise papers into collections
-- Classify papers by topic and type
-- Estimate reading difficulty
-- Recommend prerequisite material
-- Build personalised reading pathways
-- Generate AI-assisted summaries
-- Create an interactive visual map of AI research
+This project aligns well with the **Freestyle** or **Agents for Good** tracks (by democratizing access to complex AI research for students).
 
-This submission focuses on the **Minimum Viable Product (MVP): the Research Paper Triage Agent**.
+## Features
 
----
+- **Local JSON Support**: Triage custom sets of offline papers.
+- **Live arXiv Search**: Query the arXiv API directly from the CLI (e.g., `python -m src.main --search "LLM agents"`).
+- **Interactive Mode**: Manually enter paper details via terminal prompts.
+- **Rule-Based Triage Engine**: Deterministically assigns difficulty, topics, and decisions.
+- **Markdown Export**: Generate beautifully formatted triage reports for sharing or documentation.
+- **Zero API Cost**: The MVP is fully open-source and deterministic, requiring no paid LLM API keys.
 
-# Features
+## Agent Workflow
 
-Current MVP features include:
+The triage agent follows a strict multi-step orchestration:
+1. `validate input` via Pydantic schemas.
+2. `classify paper type` (e.g., Survey, Benchmark, Methods).
+3. `estimate difficulty` (Beginner, Intermediate, Advanced).
+4. `extract topic tags` via heuristic keyword matching.
+5. `identify prerequisite concepts`.
+6. `decide` (Read, Skim, Save for Later, Skip for Now).
+7. `generate a suggested reading path` tailored to the paper type and user level.
+8. `return a structured triage report`.
 
-- Search arXiv using the official API
-- Analyse papers from local JSON files
-- Validate paper metadata using Pydantic schemas
-- Classify paper type
-- Estimate reading difficulty
-- Extract topic tags
-- Identify prerequisite concepts
-- Recommend whether to Read, Skim, Save for Later or Skip
-- Generate structured reading pathways
-- Export results as Markdown
-- Unit tested with PyTest
-
----
-
-# Example Workflow
-
-```text
-                Search Query
-                      │
-                      ▼
-            Official arXiv API
-                      │
-                      ▼
-              Paper Metadata
-                      │
-                      ▼
-             Schema Validation
-                      │
-                      ▼
-         Research Paper Triage Agent
-                      │
-      ┌───────────────┼───────────────┐
-      ▼               ▼               ▼
- Classification   Difficulty     Topic Tags
-      │               │               │
-      └───────────────┼───────────────┘
-                      ▼
-        Recommendation Generation
-                      │
-                      ▼
-             Structured Report
-```
-
----
-
-# Repository Structure
+## Repository Structure
 
 ```
 research-paper-organizer-visual-map/
-
+├── README.md               # Project documentation
+├── requirements.txt        # Python dependencies
 ├── src/
-│   ├── main.py
-│   ├── schemas.py
-│   ├── triage_agent.py
-│   ├── tools.py
-│   ├── arxiv_client.py
-│   ├── output_formatter.py
-│   └── llm_client.py
-│
-├── examples/
-│   ├── sample_papers.json
-│   └── sample_outputs.md
-│
-├── tests/
-│
-├── docs/
-│
-├── screenshots/
-│
-├── README.md
-├── requirements.txt
-├── .gitignore
-└── .env.example
+│   ├── main.py             # CLI entrypoint
+│   ├── schemas.py          # Pydantic data models
+│   ├── triage_agent.py     # Multi-step agent workflow
+│   ├── tools.py            # Rule-based heuristic functions
+│   ├── arxiv_client.py     # Live arXiv API integration
+│   ├── llm_client.py       # Placeholder for future LLM support
+│   └── output_formatter.py # Terminal and Markdown formatting
+├── examples/               # Sample inputs and outputs
+├── tests/                  # Pytest unit tests
+└── docs/                   # Architectural decisions and limitations
 ```
 
----
+## How to Run
 
-# Usage
+1. Clone the repository and navigate into the folder.
+2. Create and activate a virtual environment.
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Analyse local example papers
-
+### Run with Local Examples
+Triage a bundled set of 5 diverse sample papers:
 ```bash
 python -m src.main --input examples/sample_papers.json
 ```
 
----
-
-## Search arXiv
-
-Example:
-
+### Run with arXiv Search
+Query the arXiv API live (requires internet):
 ```bash
-python -m src.main --search "LLM agents"
+python -m src.main --search "transformer agents" --max-results 5
 ```
 
-Specify the number of papers
-
-```bash
-python -m src.main --search "world models" --max-results 10
-```
-
----
-
-## Export results
-
+### Save Output to Markdown
+Save the triage report to a Markdown file:
 ```bash
 python -m src.main --input examples/sample_papers.json --output examples/sample_outputs.md
 ```
 
----
+## Example Input
 
-# Example Output
+A typical `PaperInput` schema expects:
+- Title
+- Abstract
+- User Level (beginner/intermediate/advanced)
+
+*(See `examples/sample_papers.json` for full JSON examples).*
+
+## Example Output
 
 ```text
-Title:
-Survey of Large Language Model Agents
-
-Decision:
-READ
-
-Difficulty:
-Intermediate
-
-Paper Type:
-Survey
-
-Topic Tags:
-LLMs
-Agents
-Planning
-
-Prerequisites:
-Python
-Transformers
-Prompt Engineering
-
-Reason:
-Excellent overview paper suitable for users entering the field.
+[1] A Comprehensive Survey of Autonomous LLM Agents
+--------------------------------------------------------------------------------
+  * Recommendation : READ
+  * Paper Type     : Survey
+  * Difficulty     : Beginner
+  * Topic Tags     : large language model, LLM, agent, tool use
+  * Summary        : We present a detailed survey and taxonomy of autonomous...
+  * Reason         : Survey papers provide an excellent high-level overview...
+  * Prerequisites  :
+      - Basic Python & Machine Learning concepts
+      - Transformer Architecture & Self-Attention mechanisms
+  * Reading Path   :
+      1. Abstract
+      2. Conclusion
+      3. Figures & Tables
 ```
 
----
+## Evaluation/Testing
 
-# Testing
-
-Run the test suite
-
+The project includes a robust `pytest` suite testing schema validation, heuristic tool logic, end-to-end agent workflows, and mocked XML parsing for the arXiv client.
+Run tests using:
 ```bash
 pytest
 ```
 
----
+## Limitations
 
-# Technologies Used
+- **Rule-Based Heuristics**: The agent relies on deterministic keyword rules, which can occasionally misclassify papers if unconventional terminology is used.
+- **Abstract-Only**: The agent does not parse full PDF texts.
+- **Live Search**: arXiv searches depend on public API availability.
+- **Visual Map**: The 3D visual cluster mapping feature is not yet built.
 
-- Python
-- Pydantic
-- Requests
-- PyTest
-- Official arXiv API
+*(See `docs/limitations.md` for a complete list).*
 
----
+## Future Work
 
-# Design Philosophy
-
-The project follows a modular architecture.
-
-Rather than placing all logic into a single script, responsibilities are separated into independent modules:
-
-- Data retrieval
-- Schema validation
-- Paper classification
-- Recommendation generation
-- Output formatting
-
-This makes the project easier to maintain and allows future AI models or additional paper repositories to be integrated without major architectural changes.
+Future enhancements beyond the Kaggle intensive capstone include:
+- **PDF Parsing**: Extracting insights from full-text PDFs.
+- **LLM-Assisted Analysis**: Integrating Google Gemini (`src/llm_client.py`) for deep semantic understanding.
+- **Platform Integrations**: Connecting to Hugging Face Papers or Semantic Scholar.
+- **3D Visual Mapping**: Clustering papers and generating interactive web-based visual field maps.
 
 ---
-
-# Current Limitations
-
-The MVP currently:
-
-- Uses paper metadata (primarily title and abstract)
-- Uses deterministic rule-based classification
-- Does not yet analyse full PDFs
-- Does not yet build the planned visual knowledge graph
-- Does not yet generate AI-powered semantic summaries
-
-These limitations are intentional in order to create a reliable and easily testable MVP.
-
----
-
-# Future Work
-
-Planned features include:
-
-- Full PDF parsing
-- Semantic paper embeddings
-- Vector search
-- Personal paper libraries
-- Reading history
-- Automatic note generation
-- Citation graph visualisation
-- Interactive knowledge maps
-- Multi-agent paper analysis
-- Optional Gemini integration
-- Hugging Face paper support
-- Semantic clustering of research topics
-
----
-
-# Why I Built This
-
-As an Applied AI student, I quickly discovered that keeping up with research is one of the biggest challenges when learning modern AI.
-
-This project began as an attempt to solve a personal problem:
-
-> *How can students discover the right papers to read without becoming overwhelmed by the sheer volume of research being published?*
-
-The Research Paper Triage Agent is the first step towards answering that question.
-
----
-
-# Kaggle Capstone
-
-This repository was developed as my submission for the **Kaggle 5-Day AI Agents Intensive Capstone Project**.
-
-The submitted MVP demonstrates:
-
-- Agent-oriented software architecture
-- Real-time retrieval of research papers using the official arXiv API
-- Automated paper triage
-- Structured recommendations
-- Modular, extensible design suitable for future AI-powered enhancements
-
----
-
-# License
-
-This project is released under the MIT License.
-
+*Note: This repository was built as a capstone project for the Kaggle 5-Day AI Agents Intensive course. The core submission is the Research Paper Triage Agent MVP.*
