@@ -4,7 +4,10 @@ Deterministic rule-based helper tool functions for paper analysis and triage.
 
 import re
 from typing import List, Optional, Dict
-from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel, ComplexitySignals, PaperRequirements
+from src.schemas import (
+    DecisionType, DifficultyType, PaperType, UserLevel,
+    ComplexitySignals, PaperRequirements, UserProfile, PersonalisedDifficulty
+)
 
 
 def _strip_references(text: str) -> str:
@@ -180,6 +183,86 @@ def analyze_paper_requirements(
         topic_tags=topic_tags,
         complexity_signals=signals,
         prerequisites=prerequisites
+    )
+
+
+# Maps CompetenceLevel strings to numeric scores for gap calculation.
+_COMPETENCE_SCORE: Dict[str, int] = {"none": 0, "basic": 1, "working": 2, "solid": 3}
+
+# Human-readable labels for each complexity signal dimension.
+_DIMENSION_LABELS: Dict[str, str] = {
+    "math":         "Mathematics & Theory",
+    "ml":           "Machine Learning & Deep Learning",
+    "systems":      "Systems & Infrastructure",
+    "experimental": "Research Methods & Experimentation",
+}
+
+
+def assess_personalised_difficulty(
+    requirements: PaperRequirements, profile: UserProfile
+) -> PersonalisedDifficulty:
+    """Compare PaperRequirements against a UserProfile to produce a personalised difficulty.
+
+    For each complexity dimension where the paper fires a signal, we compute
+    the gap between what the paper demands (score=3) and what the user offers.
+    Gaps sum to a total score used to classify difficulty.
+
+    Gap score ranges:
+      0-3  → beginner  (paper demands match or barely exceed user strengths)
+      4-7  → intermediate
+      8-12 → advanced  (significant missing prerequisites)
+    """
+    sigs = requirements.complexity_signals
+
+    # Average the two ML sub-fields for a single ML score.
+    def _ml_score() -> int:
+        return (_COMPETENCE_SCORE[profile.machine_learning]
+                + _COMPETENCE_SCORE[profile.deep_learning]) // 2
+
+    # Average the two math-adjacent sub-fields.
+    def _math_score() -> int:
+        return (_COMPETENCE_SCORE[profile.mathematics]
+                + _COMPETENCE_SCORE[profile.statistics]) // 2
+
+    # Build a mapping from active dimensions → user score.
+    active_dimensions: Dict[str, tuple[bool, int]] = {
+        "math":         (sigs.has_math_complexity,         _math_score()),
+        "ml":           (sigs.has_ml_complexity,           _ml_score()),
+        "systems":      (sigs.has_systems_complexity,      _COMPETENCE_SCORE[profile.systems_and_infrastructure]),
+        "experimental": (sigs.has_experimental_complexity, _COMPETENCE_SCORE[profile.research_experience]),
+    }
+
+    gap_score = 0
+    matched_strengths: List[str] = []
+    missing_prerequisites: List[str] = []
+
+    for dim_key, (is_active, user_score) in active_dimensions.items():
+        if not is_active:
+            continue  # paper does not demand this dimension — skip
+
+        label = _DIMENSION_LABELS[dim_key]
+        gap = 3 - user_score          # max gap is 3 (solid fully covers demand)
+        gap_score += max(gap, 0)      # never go negative
+
+        if user_score == 0:
+            missing_prerequisites.append(label)
+        elif user_score >= 2:         # working or solid
+            matched_strengths.append(label)
+        # user_score == 1 (basic): neither a strength nor fully missing — neutral
+
+    # Classify by total gap
+    if gap_score <= 3:
+        difficulty: DifficultyType = "beginner"
+    elif gap_score <= 7:
+        difficulty = "intermediate"
+    else:
+        difficulty = "advanced"
+
+    return PersonalisedDifficulty(
+        difficulty=difficulty,
+        gap_score=gap_score,
+        matched_strengths=matched_strengths,
+        missing_prerequisites=missing_prerequisites,
     )
 
 

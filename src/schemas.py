@@ -74,6 +74,23 @@ class UserProfile(BaseModel):
     )
 
 
+class PersonalisedDifficulty(BaseModel):
+    """The result of comparing PaperRequirements against a UserProfile."""
+    difficulty: DifficultyType = Field(
+        description="Personalised difficulty for this reader."
+    )
+    gap_score: int = Field(
+        description="Raw gap score (0-12). Higher means more prerequisites are missing."
+    )
+    matched_strengths: List[str] = Field(
+        default_factory=list,
+        description="Domains where the user has working or solid competence matching a paper demand."
+    )
+    missing_prerequisites: List[str] = Field(
+        default_factory=list,
+        description="Domains where the paper demands knowledge the user does not yet have."
+    )
+
 
 class PaperInput(BaseModel):
     title: str = Field(..., description="The title of the paper.")
@@ -128,4 +145,5 @@ class TriageOutput(BaseModel):
     complexity_signals: Optional[ComplexitySignals] = None
     paper_requirements: Optional[PaperRequirements] = None
     user_profile: Optional[UserProfile] = None
+    personalised_difficulty: Optional[PersonalisedDifficulty] = None
 

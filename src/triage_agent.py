@@ -21,10 +21,16 @@ class TriageAgent:
             paper.title, paper.abstract, paper.full_text
         )
 
-        # 3. Estimate personalised difficulty
-        difficulty = tools.estimate_difficulty(
-            requirements, paper.user_level
-        )
+        # 3. Assess personalised difficulty (uses UserProfile when available, else
+        #    falls back to the legacy coarse user_level estimate)
+        personalised_difficulty = None
+        if paper.user_profile is not None:
+            personalised_difficulty = tools.assess_personalised_difficulty(
+                requirements, paper.user_profile
+            )
+            difficulty = personalised_difficulty.difficulty
+        else:
+            difficulty = tools.estimate_difficulty(requirements, paper.user_level)
 
         # 4. Decide recommendation and generate public explanation
         decision, reason = tools.recommend_decision(
@@ -36,7 +42,7 @@ class TriageAgent:
             requirements.paper_type, difficulty, paper.user_level
         )
 
-        # Create concise summary
+        # 6. Create concise summary
         summary = tools.create_short_summary(paper.title, paper.abstract)
 
         # 7. Return structured triage report
@@ -54,6 +60,7 @@ class TriageAgent:
             complexity_signals=requirements.complexity_signals,
             paper_requirements=requirements,
             user_profile=paper.user_profile,
+            personalised_difficulty=personalised_difficulty,
         )
 
     def triage_batch(self, papers: List[PaperInput]) -> List[TriageOutput]:
