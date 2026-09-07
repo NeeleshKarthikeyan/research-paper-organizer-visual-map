@@ -39,6 +39,9 @@ class PaperRequirements(BaseModel):
 class PaperInput(BaseModel):
     title: str = Field(..., description="The title of the paper.")
     abstract: str = Field(..., description="The abstract or summary of the paper.")
+    full_text: Optional[str] = Field(
+        default=None, description="The complete text of the paper if extracted from a source like a PDF."
+    )
     user_level: UserLevel = Field(
         default="beginner", description="Experience level of the user."
     )

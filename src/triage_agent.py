@@ -17,7 +17,9 @@ class TriageAgent:
         """Execute the multi-step triage workflow for a single paper."""
         # 1. Input is already validated by Pydantic PaperInput model
         # 2. Analyze the objective requirements of the paper
-        requirements = tools.analyze_paper_requirements(paper.title, paper.abstract)
+        requirements = tools.analyze_paper_requirements(
+            paper.title, paper.abstract, paper.full_text
+        )
 
         # 3. Estimate personalised difficulty
         difficulty = tools.estimate_difficulty(

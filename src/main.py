@@ -11,6 +11,7 @@ from typing import List
 from src.schemas import PaperInput
 from src.triage_agent import TriageAgent
 from src.arxiv_client import fetch_arxiv_papers
+from src.pdf_parser import parse_pdf_to_paper
 from src.output_formatter import format_terminal_output, format_markdown_output
 
 
@@ -89,6 +90,12 @@ def main():
         type=str,
         help="Optional path to save triage report as Markdown file.",
     )
+    parser.add_argument(
+        "--pdf",
+        "-p",
+        type=str,
+        help="Path to a local PDF file to triage.",
+    )
 
     args = parser.parse_args()
 
@@ -103,6 +110,13 @@ def main():
         if not papers:
             print("No papers found or error fetching from arXiv.")
             sys.exit(0)
+    elif args.pdf:
+        print(f"\n[Info] Parsing PDF from local file: {args.pdf}")
+        paper = parse_pdf_to_paper(args.pdf)
+        if not paper:
+            print(f"Error parsing PDF or no text found in '{args.pdf}'.", file=sys.stderr)
+            sys.exit(1)
+        papers = [paper]
     else:
         papers = run_interactive_mode()
 

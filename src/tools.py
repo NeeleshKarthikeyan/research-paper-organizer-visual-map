@@ -7,9 +7,9 @@ from typing import List, Optional, Dict
 from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel, ComplexitySignals, PaperRequirements
 
 
-def classify_paper_type(title: str, abstract: str) -> PaperType:
-    """Classify paper type based on keywords in title and abstract."""
-    text = f"{title} {abstract}".lower()
+def classify_paper_type(title: str, abstract: str, full_text: Optional[str] = None) -> PaperType:
+    """Classify paper type based on keywords in title, abstract, and optionally full text."""
+    text = f"{title} {abstract} {full_text or ''}".lower()
 
     if any(k in text for k in ["survey", "review", "taxonomy"]):
         return "survey"
@@ -45,9 +45,9 @@ def classify_paper_type(title: str, abstract: str) -> PaperType:
     return "unknown"
 
 
-def extract_topic_tags(title: str, abstract: str) -> List[str]:
-    """Extract relevant topic tags from title and abstract text."""
-    text = f"{title} {abstract}".lower()
+def extract_topic_tags(title: str, abstract: str, full_text: Optional[str] = None) -> List[str]:
+    """Extract relevant topic tags from title, abstract, and optional full text."""
+    text = f"{title} {abstract} {full_text or ''}".lower()
 
     topic_map = {
         "transformer": ["transformer", "transformers"],
@@ -90,9 +90,9 @@ def extract_topic_tags(title: str, abstract: str) -> List[str]:
     return tags if tags else ["general AI"]
 
 
-def extract_complexity_signals(title: str, abstract: str) -> ComplexitySignals:
-    """Extract explicit complexity signals from title and abstract text."""
-    text = f"{title} {abstract}".lower()
+def extract_complexity_signals(title: str, abstract: str, full_text: Optional[str] = None) -> ComplexitySignals:
+    """Extract explicit complexity signals from title, abstract, and optional full text."""
+    text = f"{title} {abstract} {full_text or ''}".lower()
     
     # Justified minimal keyword lists for complexity dimensions
     math_terms = ["theorem", "proof", "asymptotic", "convergence bound"]
@@ -151,11 +151,13 @@ def identify_prerequisites(topic_tags: List[str], signals: ComplexitySignals) ->
     return list(dict.fromkeys(prereqs))  # Remove duplicates preserving order
 
 
-def analyze_paper_requirements(title: str, abstract: str) -> PaperRequirements:
+def analyze_paper_requirements(
+    title: str, abstract: str, full_text: Optional[str] = None
+) -> PaperRequirements:
     """Analyze a paper and return its objective requirements."""
-    paper_type = classify_paper_type(title, abstract)
-    topic_tags = extract_topic_tags(title, abstract)
-    signals = extract_complexity_signals(title, abstract)
+    paper_type = classify_paper_type(title, abstract, full_text)
+    topic_tags = extract_topic_tags(title, abstract, full_text)
+    signals = extract_complexity_signals(title, abstract, full_text)
     prerequisites = identify_prerequisites(topic_tags, signals)
 
     return PaperRequirements(
