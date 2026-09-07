@@ -21,7 +21,7 @@ class TriageAgent:
 
         # 3. Estimate personalised difficulty
         difficulty = tools.estimate_difficulty(
-            paper.title, paper.abstract, paper.user_level, signals=requirements.complexity_signals
+            requirements, paper.user_level
         )
 
         # 4. Decide recommendation and generate public explanation

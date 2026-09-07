@@ -109,28 +109,23 @@ def extract_complexity_signals(title: str, abstract: str) -> ComplexitySignals:
 
 
 def estimate_difficulty(
-    title: str, abstract: str, user_level: UserLevel, signals: Optional[ComplexitySignals] = None
+    requirements: PaperRequirements, user_level: UserLevel
 ) -> DifficultyType:
-    """Estimate paper difficulty based on complexity signals and user level context."""
-    text = f"{title} {abstract}".lower()
-    paper_type = classify_paper_type(title, abstract)
-
-    if signals is None:
-        signals = extract_complexity_signals(title, abstract)
-
+    """Estimate paper difficulty based on objective requirements and user level context."""
+    
     # Count how many different complexity dimensions are present
     advanced_score = sum([
-        signals.has_math_complexity,
-        signals.has_ml_complexity,
-        signals.has_systems_complexity,
-        signals.has_experimental_complexity
+        requirements.complexity_signals.has_math_complexity,
+        requirements.complexity_signals.has_ml_complexity,
+        requirements.complexity_signals.has_systems_complexity,
+        requirements.complexity_signals.has_experimental_complexity
     ])
 
-    if paper_type in ["theory", "systems"] or advanced_score >= 2 or signals.has_math_complexity:
+    if requirements.paper_type in ["theory", "systems"] or advanced_score >= 2 or requirements.complexity_signals.has_math_complexity:
         return "advanced"
-    elif paper_type == "survey" or "introduction" in text:
+    elif requirements.paper_type == "survey":
         return "beginner"
-    elif paper_type in ["methods", "benchmark"] or advanced_score == 1:
+    elif requirements.paper_type in ["methods", "benchmark"] or advanced_score == 1:
         return "intermediate"
     else:
         return "intermediate" if user_level == "intermediate" else "beginner"
