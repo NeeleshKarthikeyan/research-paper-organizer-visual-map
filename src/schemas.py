@@ -20,6 +20,8 @@ PaperType = Literal[
     "position",
     "unknown",
 ]
+CompetenceLevel = Literal["none", "basic", "working", "solid"]
+
 
 
 class ComplexitySignals(BaseModel):
@@ -36,6 +38,43 @@ class PaperRequirements(BaseModel):
     prerequisites: List[str] = Field(description="Knowledge required by the paper.")
 
 
+class UserProfile(BaseModel):
+    """Describes the reader's self-assessed competence across relevant domains.
+
+    Each field uses CompetenceLevel: 'none' | 'basic' | 'working' | 'solid'.
+    Defaults to 'none' so that a partially filled profile is still valid.
+    """
+    programming: CompetenceLevel = Field(
+        default="none",
+        description="General programming ability (Python, scripting, debugging)."
+    )
+    mathematics: CompetenceLevel = Field(
+        default="none",
+        description="Mathematical maturity (calculus, proofs, notation)."
+    )
+    statistics: CompetenceLevel = Field(
+        default="none",
+        description="Probability and statistical reasoning."
+    )
+    machine_learning: CompetenceLevel = Field(
+        default="none",
+        description="Familiarity with ML concepts (training, loss, evaluation)."
+    )
+    deep_learning: CompetenceLevel = Field(
+        default="none",
+        description="Experience with neural networks, backpropagation, optimizers."
+    )
+    systems_and_infrastructure: CompetenceLevel = Field(
+        default="none",
+        description="Knowledge of distributed systems, GPUs, quantization, latency."
+    )
+    research_experience: CompetenceLevel = Field(
+        default="none",
+        description="Familiarity with experimental design, baselines, ablation studies."
+    )
+
+
+
 class PaperInput(BaseModel):
     title: str = Field(..., description="The title of the paper.")
     abstract: str = Field(..., description="The abstract or summary of the paper.")
@@ -43,10 +82,13 @@ class PaperInput(BaseModel):
         default=None, description="The complete text of the paper if extracted from a source like a PDF."
     )
     user_level: UserLevel = Field(
-        default="beginner", description="Experience level of the user."
+        default="beginner", description="Experience level of the user (legacy coarse field)."
     )
     user_goal: Optional[str] = Field(
         default=None, description="Optional stated learning goal of the user."
+    )
+    user_profile: Optional[UserProfile] = Field(
+        default=None, description="Structured competence profile of the user across domains."
     )
     source_url: Optional[str] = Field(
         default=None, description="URL to the paper or arXiv page."
@@ -85,4 +127,5 @@ class TriageOutput(BaseModel):
     source_url: Optional[str] = None
     complexity_signals: Optional[ComplexitySignals] = None
     paper_requirements: Optional[PaperRequirements] = None
+    user_profile: Optional[UserProfile] = None
 

@@ -53,6 +53,7 @@ class TriageAgent:
             source_url=paper.source_url,
             complexity_signals=requirements.complexity_signals,
             paper_requirements=requirements,
+            user_profile=paper.user_profile,
         )
 
     def triage_batch(self, papers: List[PaperInput]) -> List[TriageOutput]:
