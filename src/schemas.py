@@ -29,6 +29,13 @@ class ComplexitySignals(BaseModel):
     has_experimental_complexity: bool = Field(default=False, description="Contains research methodology terms (e.g. ablation, baseline).")
 
 
+class PaperRequirements(BaseModel):
+    paper_type: PaperType = Field(description="The structural type of the paper.")
+    topic_tags: List[str] = Field(description="Domain-specific topics covered in the paper.")
+    complexity_signals: ComplexitySignals = Field(description="Deterministic evidence of complexity.")
+    prerequisites: List[str] = Field(description="Knowledge required by the paper.")
+
+
 class PaperInput(BaseModel):
     title: str = Field(..., description="The title of the paper.")
     abstract: str = Field(..., description="The abstract or summary of the paper.")
@@ -74,3 +81,5 @@ class TriageOutput(BaseModel):
     reason: str
     source_url: Optional[str] = None
     complexity_signals: Optional[ComplexitySignals] = None
+    paper_requirements: Optional[PaperRequirements] = None
+

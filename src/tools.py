@@ -4,7 +4,7 @@ Deterministic rule-based helper tool functions for paper analysis and triage.
 
 import re
 from typing import List, Optional, Dict
-from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel, ComplexitySignals
+from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel, ComplexitySignals, PaperRequirements
 
 
 def classify_paper_type(title: str, abstract: str) -> PaperType:
@@ -136,8 +136,8 @@ def estimate_difficulty(
         return "intermediate" if user_level == "intermediate" else "beginner"
 
 
-def identify_prerequisites(topic_tags: List[str], difficulty: DifficultyType) -> List[str]:
-    """Identify recommended prerequisite concepts based on topics and difficulty."""
+def identify_prerequisites(topic_tags: List[str], signals: ComplexitySignals) -> List[str]:
+    """Identify recommended prerequisite concepts based on topics and complexity signals."""
     prereqs = ["Basic Python & Machine Learning concepts"]
 
     if "transformer" in topic_tags or "LLM" in topic_tags or "attention" in topic_tags:
@@ -148,12 +148,27 @@ def identify_prerequisites(topic_tags: List[str], difficulty: DifficultyType) ->
         prereqs.append("Vector Embeddings & Similarity Search")
     if "reinforcement learning" in topic_tags or "alignment" in topic_tags:
         prereqs.append("Reinforcement Learning fundamentals & RLHF")
-    if "systems" in topic_tags or difficulty == "advanced":
+    if "systems" in topic_tags or signals.has_systems_complexity:
         prereqs.append("Distributed Systems & GPU Memory Optimization fundamentals")
-    if "theory" in topic_tags or difficulty == "advanced":
+    if "theory" in topic_tags or signals.has_math_complexity:
         prereqs.append("Multivariate Calculus, Probability Theory & Matrix Calculus")
 
     return list(dict.fromkeys(prereqs))  # Remove duplicates preserving order
+
+
+def analyze_paper_requirements(title: str, abstract: str) -> PaperRequirements:
+    """Analyze a paper and return its objective requirements."""
+    paper_type = classify_paper_type(title, abstract)
+    topic_tags = extract_topic_tags(title, abstract)
+    signals = extract_complexity_signals(title, abstract)
+    prerequisites = identify_prerequisites(topic_tags, signals)
+
+    return PaperRequirements(
+        paper_type=paper_type,
+        topic_tags=topic_tags,
+        complexity_signals=signals,
+        prerequisites=prerequisites
+    )
 
 
 def recommend_decision(

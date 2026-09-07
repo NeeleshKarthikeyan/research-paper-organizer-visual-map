@@ -42,3 +42,13 @@ def test_extract_complexity_signals():
     assert signals.has_systems_complexity is False
     assert signals.has_experimental_complexity is False
 
+
+def test_analyze_paper_requirements():
+    reqs = tools.analyze_paper_requirements(
+        title="Theoretical Bounds for Gradient Descent",
+        abstract="We present a mathematical proof for convergence bound in backpropagation."
+    )
+    assert reqs.paper_type == "theory"
+    assert reqs.complexity_signals.has_math_complexity is True
+    assert "Multivariate Calculus, Probability Theory & Matrix Calculus" in reqs.prerequisites
+

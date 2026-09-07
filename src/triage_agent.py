@@ -16,50 +16,41 @@ class TriageAgent:
     def triage_paper(self, paper: PaperInput) -> TriageOutput:
         """Execute the multi-step triage workflow for a single paper."""
         # 1. Input is already validated by Pydantic PaperInput model
+        # 2. Analyze the objective requirements of the paper
+        requirements = tools.analyze_paper_requirements(paper.title, paper.abstract)
 
-        # 2. Classify paper type
-        paper_type = tools.classify_paper_type(paper.title, paper.abstract)
-
-        # 3. Extract complexity signals
-        complexity_signals = tools.extract_complexity_signals(paper.title, paper.abstract)
-
-        # 4. Estimate difficulty
+        # 3. Estimate personalised difficulty
         difficulty = tools.estimate_difficulty(
-            paper.title, paper.abstract, paper.user_level, signals=complexity_signals
+            paper.title, paper.abstract, paper.user_level, signals=requirements.complexity_signals
         )
 
-        # 5. Extract topic tags
-        topic_tags = tools.extract_topic_tags(paper.title, paper.abstract)
-
-        # 6. Identify prerequisite concepts
-        prerequisites = tools.identify_prerequisites(topic_tags, difficulty)
-
-        # 7. Decide recommendation and generate public explanation
+        # 4. Decide recommendation and generate public explanation
         decision, reason = tools.recommend_decision(
-            paper_type, difficulty, paper.user_level, paper.user_goal
+            requirements.paper_type, difficulty, paper.user_level, paper.user_goal
         )
 
-        # 8. Generate suggested reading path
+        # 5. Generate suggested reading path
         reading_path = tools.generate_reading_path(
-            paper_type, difficulty, paper.user_level
+            requirements.paper_type, difficulty, paper.user_level
         )
 
         # Create concise summary
         summary = tools.create_short_summary(paper.title, paper.abstract)
 
-        # 8. Return structured triage report
+        # 7. Return structured triage report
         return TriageOutput(
             title=paper.title,
             decision=decision,
             difficulty=difficulty,
-            paper_type=paper_type,
-            topic_tags=topic_tags,
-            prerequisites=prerequisites,
+            paper_type=requirements.paper_type,
+            topic_tags=requirements.topic_tags,
+            prerequisites=requirements.prerequisites,
             summary=summary,
             reading_path=reading_path,
             reason=reason,
             source_url=paper.source_url,
-            complexity_signals=complexity_signals,
+            complexity_signals=requirements.complexity_signals,
+            paper_requirements=requirements,
         )
 
     def triage_batch(self, papers: List[PaperInput]) -> List[TriageOutput]:
