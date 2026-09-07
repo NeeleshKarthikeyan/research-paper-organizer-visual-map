@@ -52,3 +52,30 @@ def test_analyze_paper_requirements():
     assert reqs.complexity_signals.has_math_complexity is True
     assert "Multivariate Calculus, Probability Theory & Matrix Calculus" in reqs.prerequisites
 
+
+def test_full_text_influences_analysis():
+    # Only title and abstract, which don't trigger systems complexity
+    title = "A New Training Approach"
+    abstract = "We train models faster."
+    
+    reqs_no_full_text = tools.analyze_paper_requirements(title=title, abstract=abstract)
+    assert reqs_no_full_text.complexity_signals.has_systems_complexity is False
+    
+    # Now provide full text that contains systems complexity triggers
+    full_text = "We achieved this by improving throughput and latency in distributed training."
+    reqs_with_full_text = tools.analyze_paper_requirements(title=title, abstract=abstract, full_text=full_text)
+    assert reqs_with_full_text.complexity_signals.has_systems_complexity is True
+
+
+def test_references_do_not_influence_analysis():
+    title = "A Simple Guide to AI"
+    abstract = "A beginner friendly guide."
+    
+    # Math complexity triggers in the references should be ignored
+    full_text = "This is a simple guide.\n\nReferences\n1. A theorem and proof for convergence bound."
+    
+    reqs = tools.analyze_paper_requirements(title=title, abstract=abstract, full_text=full_text)
+    
+    # The math complexity should remain false because the triggers are in the references
+    assert reqs.complexity_signals.has_math_complexity is False
+

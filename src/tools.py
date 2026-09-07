@@ -7,9 +7,22 @@ from typing import List, Optional, Dict
 from src.schemas import DecisionType, DifficultyType, PaperType, UserLevel, ComplexitySignals, PaperRequirements
 
 
+def _strip_references(text: str) -> str:
+    """Truncate paper text at the references or bibliography section to avoid false positives."""
+    if not text:
+        return ""
+    # Use regex to find "references" or "bibliography" on their own line
+    # \n\s* ensures it's at the start of a line, \s*\n ensures it's the only thing on the line
+    match = re.search(r'\n\s*(references|bibliography)\s*\n', text.lower())
+    if match:
+        return text[:match.start()]
+    return text
+
+
 def classify_paper_type(title: str, abstract: str, full_text: Optional[str] = None) -> PaperType:
     """Classify paper type based on keywords in title, abstract, and optionally full text."""
-    text = f"{title} {abstract} {full_text or ''}".lower()
+    body = _strip_references(full_text) if full_text else ""
+    text = f"{title} {abstract} {body}".lower()
 
     if any(k in text for k in ["survey", "review", "taxonomy"]):
         return "survey"
@@ -47,7 +60,8 @@ def classify_paper_type(title: str, abstract: str, full_text: Optional[str] = No
 
 def extract_topic_tags(title: str, abstract: str, full_text: Optional[str] = None) -> List[str]:
     """Extract relevant topic tags from title, abstract, and optional full text."""
-    text = f"{title} {abstract} {full_text or ''}".lower()
+    body = _strip_references(full_text) if full_text else ""
+    text = f"{title} {abstract} {body}".lower()
 
     topic_map = {
         "transformer": ["transformer", "transformers"],
@@ -92,7 +106,8 @@ def extract_topic_tags(title: str, abstract: str, full_text: Optional[str] = Non
 
 def extract_complexity_signals(title: str, abstract: str, full_text: Optional[str] = None) -> ComplexitySignals:
     """Extract explicit complexity signals from title, abstract, and optional full text."""
-    text = f"{title} {abstract} {full_text or ''}".lower()
+    body = _strip_references(full_text) if full_text else ""
+    text = f"{title} {abstract} {body}".lower()
     
     # Justified minimal keyword lists for complexity dimensions
     math_terms = ["theorem", "proof", "asymptotic", "convergence bound"]
