@@ -21,6 +21,11 @@ class TriageAgent:
             paper.title, paper.abstract, paper.full_text
         )
 
+        # 2b. Optional semantic LLM analysis side-by-side
+        # We do this securely and safely; if it fails, it just returns None
+        from src import llm_client
+        semantic_analysis = llm_client.analyze_paper_with_llm(paper.title, paper.abstract)
+
         # 3. Assess personalised difficulty (uses UserProfile when available, else
         #    falls back to the legacy coarse user_level estimate)
         personalised_difficulty = None
@@ -67,6 +72,7 @@ class TriageAgent:
             paper_requirements=requirements,
             user_profile=paper.user_profile,
             personalised_difficulty=personalised_difficulty,
+            semantic_analysis=semantic_analysis,
         )
 
     def triage_batch(self, papers: List[PaperInput]) -> List[TriageOutput]:

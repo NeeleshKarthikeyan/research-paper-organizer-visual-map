@@ -1,29 +1,55 @@
 """
-Optional LLM interface placeholder for future integration (e.g. Google Gemini API).
+Optional LLM interface for semantic paper analysis using Google Gemini.
 
 Note: The core MVP uses deterministic rule-based triage in tools.py and does NOT
-depend on or call any external LLM service by default.
+depend on or call any external LLM service by default. If it fails, it returns None.
 """
 
 import os
-from typing import Optional, Dict, Any
+from typing import Optional
+from src.schemas import SemanticAnalysis
 
 
 def is_llm_available() -> bool:
-    """Check if an LLM API key (GOOGLE_API_KEY) is configured in environment."""
-    return bool(os.getenv("GOOGLE_API_KEY"))
+    """Check if an LLM API key (GEMINI_API_KEY) is configured in environment."""
+    return bool(os.getenv("GEMINI_API_KEY"))
 
 
-def analyze_paper_with_llm(title: str, abstract: str) -> Optional[Dict[str, Any]]:
-    """Placeholder function for future Gemini-assisted deep semantic paper analysis.
-
-    Returns None in the current MVP as rule-based evaluation is used.
+def analyze_paper_with_llm(title: str, abstract: str) -> Optional[SemanticAnalysis]:
+    """Semantic paper analysis using Gemini.
+    
+    Catches any exceptions to ensure the deterministic pipeline never breaks.
     """
     if not is_llm_available():
         return None
 
-    # Future integration point:
-    # 1. Initialize google.generativeai with GOOGLE_API_KEY
-    # 2. Pass prompt and schema to model.generate_content
-    # 3. Parse JSON response into structured triage insights
-    return None
+    try:
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client()  # Automatically picks up GEMINI_API_KEY
+
+        prompt = (
+            f"Analyze the following research paper's title and abstract.\n"
+            f"Title: {title}\n"
+            f"Abstract: {abstract}\n\n"
+            f"Provide a structured semantic analysis including topics, prerequisites, "
+            f"math/ML/systems concepts, evidence of complexity, and an estimated difficulty "
+            f"(beginner, intermediate, or advanced)."
+        )
+
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=SemanticAnalysis,
+            ),
+        )
+        
+        # Pydantic will validate the JSON string directly
+        return SemanticAnalysis.model_validate_json(response.text)
+        
+    except Exception as e:
+        print(f"Warning: LLM analysis failed ({str(e)}). Falling back to deterministic only.")
+        return None

@@ -92,6 +92,17 @@ class PersonalisedDifficulty(BaseModel):
     )
 
 
+class SemanticAnalysis(BaseModel):
+    """Structured semantic analysis from an LLM."""
+    topics: List[str] = Field(description="Key topics discussed in the paper.")
+    prerequisites: List[str] = Field(description="Concepts the reader needs to understand.")
+    mathematical_concepts: List[str] = Field(description="Math and theory concepts present.")
+    ml_concepts: List[str] = Field(description="Machine learning concepts present.")
+    systems_concepts: List[str] = Field(description="Systems and infrastructure concepts present.")
+    evidence: str = Field(description="A brief explanation of why the paper has this complexity.")
+    estimated_complexity: DifficultyType = Field(description="The LLM's estimate of the paper's difficulty.")
+
+
 class PaperInput(BaseModel):
     title: str = Field(..., description="The title of the paper.")
     abstract: str = Field(..., description="The abstract or summary of the paper.")
@@ -146,4 +157,5 @@ class TriageOutput(BaseModel):
     paper_requirements: Optional[PaperRequirements] = None
     user_profile: Optional[UserProfile] = None
     personalised_difficulty: Optional[PersonalisedDifficulty] = None
+    semantic_analysis: Optional[SemanticAnalysis] = None
 
