@@ -53,10 +53,10 @@ class TriageAgent:
                 requirements.paper_type, difficulty, paper.user_level
             )
 
-        # 6. Create concise summary
+        # 5. Create concise summary
         summary = tools.create_short_summary(paper.title, paper.abstract)
 
-        # 7. Return structured triage report
+        # 6. Return structured triage report
         return TriageOutput(
             title=paper.title,
             decision=decision,

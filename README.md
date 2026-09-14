@@ -2,150 +2,121 @@
 
 *A Kaggle 5-Day AI Agents Intensive Capstone Project*
 
-## Kaggle Capstone MVP Summary
+## 1. What the Research Paper Triage Agent Does
+The **Research Paper Triage Agent** is a CLI-based personal research assistant. It analyzes research papers (from arXiv, local JSON, or local PDFs) and evaluates them against your specific technical background (`UserProfile`). It then generates a personalized "read, skim, save, or skip" recommendation, complete with an explanation of *why* the paper is suitable (or demanding), alongside a tailored reading path that identifies any missing prerequisites you need to study first.
 
-This repository contains the **Research Paper Triage Agent**, a lightweight CLI-based MVP developed for the Kaggle 5-Day AI Agents Intensive capstone project. 
+## 2. The Problem it Solves
+With the explosive growth of AI/ML research, it's difficult for students and engineers to know which papers are worth their time. Reading a highly technical paper without the right prerequisites is frustrating and inefficient. This agent filters the noise by explicitly matching a paper's deterministic complexity signals against a user's self-assessed competence, ensuring you only spend time on papers you are prepared to understand.
 
-The MVP agent acts as a personal research assistant. It can process local JSON files or fetch real paper metadata from the arXiv API. Using deterministic rule-based heuristics, it analyzes titles and abstracts, extracting topics, estimating difficulty, identifying prerequisite concepts, and generating personalized "read/skim/skip" recommendations with suggested reading paths.
+## 3. Supported Input Methods
+The agent accepts papers through three primary avenues:
+- **Local JSON**: Triage a bundled set of offline papers (`--input`).
+- **Live arXiv Search**: Query the arXiv API directly (`--search "LLM agents"`).
+- **Local PDF**: Extract and analyze the full text of a downloaded PDF (`--pdf`).
 
-## Long-Term Vision
+## 4. How Deterministic Analysis Works
+The core of the system is a fast, deterministic, rule-based inference engine (`src/tools.py`). It scans the paper's title, abstract, and (optionally) full text for specific keywords and phrases. It strips out the "References" section to prevent false positives, then triggers boolean complexity signals (e.g., `has_math_complexity`, `has_systems_complexity`) and extracts domain tags based on exact matches.
 
-The long-term goal of this project is to become a comprehensive research paper organizer and 3D visual mapping tool. We aim to help students and early AI researchers organize papers, discover connections between subfields, and eventually visualize entire areas of the AI field in interactive cluster maps. 
+## 5. How PaperRequirements Works
+`PaperRequirements` is an objective, intermediate representation of what the paper *demands* from any reader. It encapsulates the paper type (survey, methods, etc.), extracted topic tags, complexity signals, and a baseline list of prerequisites. Crucially, it describes the paper in isolation, entirely unaware of who will be reading it.
 
-**Note on MVP Scope**: The submitted MVP focuses strictly on the text-based Research Paper Triage Agent. The full 3D visual map is *not* complete yet and is planned for future work. This MVP is not currently production-ready and serves as a foundational prototype.
+## 6. How UserProfile Works
+`UserProfile` is the opposing side of the equation: an objective representation of what the reader *offers*. It tracks the user's self-assessed competence across 7 distinct domains (e.g., `mathematics`, `deep_learning`, `systems_and_infrastructure`). Each domain is scored as `none`, `basic`, `working`, or `solid`.
 
-## Problem
+## 7. How Personalised Difficulty is Calculated
+Difficulty is not an absolute trait of a paper; it is the gap between a paper's demands and a user's abilities. 
+For every complexity signal fired by the `PaperRequirements`, the agent looks up the user's corresponding `UserProfile` competence score. It subtracts the user's score from the maximum demand (3) to calculate a "gap score".
+- A low total gap (≤ 3) yields a **Beginner** difficulty (the paper is accessible).
+- A moderate gap (4–7) yields an **Intermediate** difficulty.
+- A high gap (≥ 8) yields an **Advanced** difficulty (significant missing prerequisites).
 
-With the explosive growth of AI and ML research, beginner and intermediate students often struggle to decide which papers are worth their time. Reading a highly technical paper without the right prerequisites can be demoralizing. Students need a way to filter the noise and receive contextual reading recommendations based on their experience level.
+## 8. How Recommendations are Generated
+Recommendations are dynamically constructed from the gap score and evidence:
+- **No gap**: `Read` ("This paper is well within your abilities.")
+- **Moderate gap**: `Skim`
+- **High gap + at least 1 matched strength**: `Save for later` (Provides a partial foothold, but foundations are missing).
+- **High gap + 0 strengths**: `Skip for now`.
+The agent explicitly names the specific domains the user is missing or strong in. If prerequisites are missing, the generated reading path prepends targeted study suggestions (e.g., "Review linear algebra") before the actual paper sections.
 
-## Solution
+## 9. How Optional Gemini Analysis Works
+For deep semantic understanding, the agent integrates optionally with Google Gemini (`gemini-2.5-flash`). If a `GEMINI_API_KEY` is detected, the agent passes the paper metadata to Gemini, instructing it to return a structured JSON response matching the Pydantic `SemanticAnalysis` schema. This runs safely alongside the deterministic system—if the API fails or is offline, the exception is caught, and the agent falls back seamlessly to the rule-based output without crashing.
 
-The **Research Paper Triage Agent** solves this by evaluating a paper’s metadata (title, abstract) against a rule-based inference engine. It outputs structured, actionable triage reports that clearly state whether a student should read, skim, or save a paper for later, alongside the prerequisites needed to understand it.
+## 10. Evaluation Framework
+Rather than assuming the LLM is superior, the project includes an evaluation module (`src/evaluation.py`). It calculates Intersection over Union (IoU) for topics and prerequisites between the deterministic and Gemini systems. It also provides a framework to measure Precision/Recall/F1 scores against a human-annotated `EvaluationGroundTruth` dataset, ensuring that any claims of "better performance" can be backed by hard metrics.
 
-## Track Recommendation
-
-This project aligns well with the **Freestyle** or **Agents for Good** tracks (by democratizing access to complex AI research for students).
-
-## Features
-
-- **Local JSON Support**: Triage custom sets of offline papers.
-- **Live arXiv Search**: Query the arXiv API directly from the CLI (e.g., `python -m src.main --search "LLM agents"`).
-- **Interactive Mode**: Manually enter paper details via terminal prompts.
-- **Rule-Based Triage Engine**: Deterministically assigns difficulty, topics, and decisions.
-- **Markdown Export**: Generate beautifully formatted triage reports for sharing or documentation.
-- **Zero API Cost**: The MVP is fully open-source and deterministic, requiring no paid LLM API keys.
-
-## Agent Workflow
-
-The triage agent follows a strict multi-step orchestration:
-1. `validate input` via Pydantic schemas.
-2. `classify paper type` (e.g., Survey, Benchmark, Methods).
-3. `estimate difficulty` (Beginner, Intermediate, Advanced).
-4. `extract topic tags` via heuristic keyword matching.
-5. `identify prerequisite concepts`.
-6. `decide` (Read, Skim, Save for Later, Skip for Now).
-7. `generate a suggested reading path` tailored to the paper type and user level.
-8. `return a structured triage report`.
-
-## Repository Structure
-
+## 11. Repository Structure
 ```
 research-paper-organizer-visual-map/
-├── README.md               # Project documentation
-├── requirements.txt        # Python dependencies
+├── .env.example             # Template for Gemini API key setup
+├── .gitignore
+├── README.md
+├── requirements.txt         # Python dependencies
 ├── src/
-│   ├── main.py             # CLI entrypoint
-│   ├── schemas.py          # Pydantic data models
-│   ├── triage_agent.py     # Multi-step agent workflow
-│   ├── tools.py            # Rule-based heuristic functions
-│   ├── arxiv_client.py     # Live arXiv API integration
-│   ├── llm_client.py       # Placeholder for future LLM support
-│   └── output_formatter.py # Terminal and Markdown formatting
-├── examples/               # Sample inputs and outputs
-├── tests/                  # Pytest unit tests
-└── docs/                   # Architectural decisions and limitations
+│   ├── main.py              # CLI entrypoint
+│   ├── schemas.py           # Pydantic data models (PaperInput, PaperRequirements, UserProfile, etc.)
+│   ├── triage_agent.py      # Orchestrator (pipe-and-filter workflow)
+│   ├── tools.py             # Deterministic analysis engine
+│   ├── arxiv_client.py      # Live arXiv API integration
+│   ├── pdf_parser.py        # Local PDF text extraction (pypdf)
+│   ├── llm_client.py        # Optional Gemini semantic analysis
+│   ├── evaluation.py        # Deterministic vs Gemini comparison metrics
+│   └── output_formatter.py  # Terminal and Markdown report formatting
+├── tests/                   # Pytest unit tests (49 tests)
+├── examples/                # Sample inputs and outputs
+└── docs/                    # Architecture and design decision documentation
 ```
 
-## How to Run
-
-1. Clone the repository and navigate into the folder.
+## 12. Installation
+1. Clone the repository.
 2. Create and activate a virtual environment.
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
+4. (Optional) Copy `.env.example` to `.env` and add your Google Gemini API key to enable semantic analysis.
 
-### Run with Local Examples
-Triage a bundled set of 5 diverse sample papers:
+## 13. Usage Examples
+**Triage a local JSON file (using legacy coarse user level):**
 ```bash
 python -m src.main --input examples/sample_papers.json
 ```
 
-### Run with arXiv Search
-Query the arXiv API live (requires internet):
+**Triage a live arXiv search:**
 ```bash
-python -m src.main --search "transformer agents" --max-results 5
+python -m src.main --search "transformer agents" --max-results 3
 ```
 
-### Save Output to Markdown
-Save the triage report to a Markdown file:
+**Triage a local PDF:**
 ```bash
-python -m src.main --input examples/sample_papers.json --output examples/sample_outputs.md
+python -m src.main --pdf path/to/downloaded_paper.pdf
 ```
 
-## Example Input
-
-A typical `PaperInput` schema expects:
-- Title
-- Abstract
-- User Level (beginner/intermediate/advanced)
-
-*(See `examples/sample_papers.json` for full JSON examples).*
-
-## Example Output
-
-```text
-[1] A Comprehensive Survey of Autonomous LLM Agents
---------------------------------------------------------------------------------
-  * Recommendation : READ
-  * Paper Type     : Survey
-  * Difficulty     : Beginner
-  * Topic Tags     : large language model, LLM, agent, tool use
-  * Summary        : We present a detailed survey and taxonomy of autonomous...
-  * Reason         : Survey papers provide an excellent high-level overview...
-  * Prerequisites  :
-      - Basic Python & Machine Learning concepts
-      - Transformer Architecture & Self-Attention mechanisms
-  * Reading Path   :
-      1. Abstract
-      2. Conclusion
-      3. Figures & Tables
-```
-
-## Evaluation/Testing
-
-The project includes a robust `pytest` suite testing schema validation, heuristic tool logic, end-to-end agent workflows, and mocked XML parsing for the arXiv client.
-Run tests using:
+**Interactive mode (no arguments):**
 ```bash
-pytest
+python -m src.main
 ```
 
-## Limitations
+**Save output to Markdown:**
+```bash
+python -m src.main --input examples/sample_papers.json --output report.md
+```
 
-- **Rule-Based Heuristics**: The agent relies on deterministic keyword rules, which can occasionally misclassify papers if unconventional terminology is used.
-- **Abstract-Only**: The agent does not parse full PDF texts.
-- **Live Search**: arXiv searches depend on public API availability.
-- **Visual Map**: The 3D visual cluster mapping feature is not yet built.
+## 14. Testing
+The project includes a 49-test `pytest` suite covering schema validation, deterministic heuristics, personalised scoring, recommendation logic, API failure mocking, and evaluation metrics.
+```bash
+pytest -v
+```
 
-*(See `docs/limitations.md` for a complete list).*
+## 15. Limitations
+- **Regex Brittleness**: The deterministic engine uses simple regex (e.g., to strip references). A poorly formatted PDF might leak bibliography text into the analysis.
+- **Competence Averaging**: The personalised scoring averages math/stats and ML/DL competence scores, which can obscure jagged profiles (e.g., an expert in ML but a total novice in DL).
+- **Evaluation Data Needed**: The evaluation framework exists, but a curated dataset of 50+ human-annotated papers is required before making objective claims about LLM superiority.
+- **Gemini is Informational Only**: The `SemanticAnalysis` from Gemini is currently attached to `TriageOutput` for inspection but does not influence the triage decision or reading path. The recommendation logic relies exclusively on the deterministic system.
+- **No UserProfile via CLI**: The CLI currently has no flag for providing a `UserProfile`. The personalised path is only available programmatically. Interactive profile input is a natural next step.
 
-## Future Work
-
-Future enhancements beyond the Kaggle intensive capstone include:
-- **PDF Parsing**: Extracting insights from full-text PDFs.
-- **LLM-Assisted Analysis**: Integrating Google Gemini (`src/llm_client.py`) for deep semantic understanding.
-- **Platform Integrations**: Connecting to Hugging Face Papers or Semantic Scholar.
-- **3D Visual Mapping**: Clustering papers and generating interactive web-based visual field maps.
-
----
-*Note: This repository was built as a capstone project for the Kaggle 5-Day AI Agents Intensive course. The core submission is the Research Paper Triage Agent MVP.*
+## 16. Future Work
+- Add CLI flags or an interactive wizard for creating a `UserProfile`.
+- Build a curated ground-truth dataset to properly benchmark the deterministic vs. Gemini systems.
+- Optionally merge `SemanticAnalysis` insights into the deterministic `PaperRequirements` when both are available (with clear evaluation-backed justification).
+- 3D Visual Mapping: Cluster papers based on extracted semantic topics and generate interactive web-based visual field maps.
+- Connect to Hugging Face Papers or Semantic Scholar APIs.

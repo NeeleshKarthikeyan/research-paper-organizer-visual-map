@@ -1,45 +1,24 @@
-# Architecture Documentation
+# Architecture
 
-## Overview
+The Research Paper Triage Agent uses a "pipe-and-filter" architecture orchestrating deterministic heuristics and optional LLM semantic analysis.
 
-The **Research Paper Triage Agent** is designed as a modular, pipe-and-filter CLI architecture. It processes raw research paper metadata (either from local JSON storage or live via the arXiv API) through validated data schemas, deterministic tool functions, and a central orchestration agent to produce structured triage reports.
+## Core Flow
+1. **Input Generation**: A `PaperInput` object is created via the CLI (`src/main.py`) using arXiv metadata (`src/arxiv_client.py`), a local JSON file, or local PDF extraction (`src/pdf_parser.py`).
+2. **Validation**: Pydantic strictly validates the `PaperInput` schema.
+3. **Objective Analysis (Deterministic)**: `src/tools.py` evaluates the paper's text to determine its objective demands, creating a `PaperRequirements` object.
+4. **Semantic Analysis (Optional LLM)**: `src/llm_client.py` optionally queries Google Gemini to produce a `SemanticAnalysis` object. If the API key is missing or the call fails, the pipeline safely ignores it.
+5. **Personalised Scoring**: The objective `PaperRequirements` are compared against the reader's `UserProfile` (if provided) to calculate a "gap score", yielding a `PersonalisedDifficulty`.
+6. **Recommendation Generation**: Using the gap score, `src/tools.py` generates a tailored decision (Read/Skim/Save/Skip), a dynamic reason string highlighting missing prerequisites, and a customized reading path.
+7. **Output**: The aggregated data is wrapped in a `TriageOutput` object and formatted for the terminal or exported as Markdown (`src/output_formatter.py`).
 
-## Component Workflow
+## Component Responsibilities
 
-```
-   [ Local JSON File ]  OR  [ arXiv API Query ]
-             │                       │
-             └───────────┬───────────┘
-                         ▼
-           [ PaperInput Schema Validation ]
-                         │
-                         ▼
-                 [ TriageAgent ]
-                         │
-        ┌────────────────┼────────────────┐
-        ▼                ▼                ▼
-[ classify_paper_type ] [ extract_topics ] [ estimate_difficulty ]
-        │                │                │
-        └────────────────┼────────────────┘
-                         ▼
-         [ identify_prerequisites ]
-                         │
-                         ▼
-           [ recommend_decision & path ]
-                         │
-                         ▼
-           [ TriageOutput Structured Model ]
-                         │
-             ┌───────────┴───────────┐
-             ▼                       ▼
-    [ Terminal Formatter ]   [ Markdown Exporter ]
-```
-
-## Detailed Module Roles
-
-1. **`src/schemas.py`**: Utilizes Pydantic to enforce data contracts for both input metadata (`PaperInput`) and generated triage reports (`TriageOutput`).
-2. **`src/arxiv_client.py`**: Encapsulates external API interaction with `export.arxiv.org`. Fetches XML feeds and converts entry metadata into standardized `PaperInput` objects.
-3. **`src/tools.py`**: Pure, deterministic functional tools implementing rules for classification, difficulty estimation, topic tag extraction, prerequisite matching, and reading path generation.
-4. **`src/triage_agent.py`**: Orchestrates the multi-step analysis sequence across tools for individual papers or batches.
-5. **`src/output_formatter.py`**: Transforms structured `TriageOutput` models into readable ANSI terminal blocks or clean Markdown files.
-6. **`src/llm_client.py`**: Provides a stub interface for optional future Gemini LLM expansion without adding runtime dependencies for the core MVP.
+- **`main.py`**: CLI entrypoint; handles argument parsing and orchestration initialization.
+- **`schemas.py`**: The single source of truth for data structures (Pydantic models). Defines the boundaries between system components.
+- **`tools.py`**: The deterministic "brain". Contains all heuristic keyword matching, complexity scoring, and dynamic text generation for recommendations.
+- **`triage_agent.py`**: The orchestrator. Moves data through the pipeline steps from Input -> Analysis -> Scoring -> Output.
+- **`pdf_parser.py`**: Extracts raw text from local PDF files using `pypdf`.
+- **`arxiv_client.py`**: Fetches and parses XML metadata from the public arXiv API.
+- **`llm_client.py`**: Securely interfaces with Google Gemini, enforcing structured JSON output via Pydantic.
+- **`evaluation.py`**: Calculates Intersection over Union (IoU) and Retrieval metrics (Precision/Recall/F1) to benchmark deterministic vs. Gemini performance.
+- **`output_formatter.py`**: Formats `TriageOutput` objects for terminal display and Markdown export.
