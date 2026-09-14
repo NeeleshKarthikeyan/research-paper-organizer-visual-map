@@ -272,8 +272,7 @@ def recommend_decision(
     user_level: UserLevel,
     user_goal: Optional[str] = None,
 ) -> tuple[DecisionType, str]:
-    """Recommend a decision (read/skim/save_for_later/skip_for_now) and provide a short public reason."""
-
+    """Legacy fallback: recommend a decision using coarse user_level."""
     # Survey papers are usually great starting points
     if paper_type == "survey":
         if difficulty == "advanced" and user_level == "beginner":
@@ -323,10 +322,102 @@ def recommend_decision(
         )
 
 
+def _build_reason(
+    paper_type: PaperType,
+    pd: "PersonalisedDifficulty",  # type: ignore[name-defined]  # imported below
+    user_goal: Optional[str] = None,
+) -> tuple["DecisionType", str]:  # type: ignore[name-defined]
+    """Internal helper: build a decision and reason from a PersonalisedDifficulty."""
+    # Sentence fragments built from actual evidence
+    gap_clause = ""
+    strength_clause = ""
+
+    if pd.missing_prerequisites:
+        areas = " and ".join(pd.missing_prerequisites)
+        gap_clause = f"It relies on {areas}, where your profile shows limited background."
+
+    if pd.matched_strengths:
+        areas = " and ".join(pd.matched_strengths)
+        strength_clause = f"You appear well prepared for the {areas} aspects."
+
+    # Decision
+    if paper_type == "survey":
+        decision: DecisionType = "read"
+        reason_parts = ["Survey papers are great for orientation."]
+        if gap_clause:
+            reason_parts.append(gap_clause)
+        if strength_clause:
+            reason_parts.append(strength_clause)
+        return decision, " ".join(reason_parts)
+
+    if pd.gap_score <= 1:
+        decision = "read"
+        if strength_clause:
+            base = f"This paper is well within your current abilities. {strength_clause}"
+        else:
+            base = "This paper is well within your current abilities."
+        return decision, base
+
+    if pd.difficulty == "beginner":  # gap 2-3
+        decision = "read"
+        parts = ["This paper is broadly accessible to you."]
+        if gap_clause:
+            parts.append(gap_clause + " A brief review before reading should be sufficient.")
+        if strength_clause:
+            parts.append(strength_clause)
+        return decision, " ".join(parts)
+
+    if pd.difficulty == "intermediate":  # gap 4-7
+        decision = "skim"
+        parts = ["This paper is moderately challenging for you."]
+        if gap_clause:
+            parts.append(gap_clause)
+        if strength_clause:
+            parts.append(strength_clause)
+        parts.append("Skimming the abstract, figures, and conclusions is recommended first.")
+        return decision, " ".join(parts)
+
+    # difficulty == "advanced" (gap 8-12)
+    if pd.matched_strengths:
+        decision = "save_for_later"
+        parts = ["This paper is currently demanding for you."]
+        if gap_clause:
+            parts.append(gap_clause)
+        if strength_clause:
+            parts.append(strength_clause + ", which provides a partial foothold.")
+        parts.append("Building the missing foundations first is recommended.")
+        return decision, " ".join(parts)
+    else:
+        decision = "skip_for_now"
+        parts = ["This paper is currently out of reach without additional background."]
+        if gap_clause:
+            parts.append(gap_clause)
+        parts.append("Revisit after building foundational knowledge in the areas above.")
+        return decision, " ".join(parts)
+
+
+# Map missing prerequisite domain labels to concrete study suggestions.
+_PREREQ_STUDY_SUGGESTIONS: Dict[str, str] = {
+    "Mathematics & Theory": "Review: linear algebra, calculus, and proof techniques (e.g. 3Blue1Brown, Gilbert Strang)",
+    "Machine Learning & Deep Learning": "Review: training loops, backpropagation, and common architectures (e.g. fast.ai, d2l.ai)",
+    "Systems & Infrastructure": "Review: GPU memory, distributed training basics (e.g. PyTorch distributed docs)",
+    "Research Methods & Experimentation": "Review: how to read ablation tables and evaluate baselines",
+}
+
+
+def recommend_with_profile(
+    paper_type: PaperType,
+    pd: "PersonalisedDifficulty",  # type: ignore[name-defined]
+    user_goal: Optional[str] = None,
+) -> tuple["DecisionType", str]:  # type: ignore[name-defined]
+    """Personalised recommendation derived from a PersonalisedDifficulty object."""
+    return _build_reason(paper_type, pd, user_goal)
+
+
 def generate_reading_path(
     paper_type: PaperType, difficulty: DifficultyType, user_level: UserLevel
 ) -> List[str]:
-    """Generate a recommended step-by-step reading path."""
+    """Legacy: generate a recommended step-by-step reading path."""
     if user_level == "beginner" or paper_type == "survey":
         return [
             "1. Abstract (Understand core problem and claims)",
@@ -350,6 +441,52 @@ def generate_reading_path(
             "3. Key Experiments & Results Tables",
             "4. Conclusion & Future Work",
         ]
+
+
+def generate_reading_path_with_profile(
+    paper_type: PaperType,
+    pd: "PersonalisedDifficulty",  # type: ignore[name-defined]
+) -> List[str]:
+    """Generate a reading path that prepends prerequisite review steps when gaps exist."""
+    prereq_steps: List[str] = []
+    step = 1
+
+    for domain in pd.missing_prerequisites:
+        suggestion = _PREREQ_STUDY_SUGGESTIONS.get(domain, f"Review: {domain} fundamentals")
+        prereq_steps.append(f"{step}. [Prerequisite] {suggestion}")
+        step += 1
+
+    if paper_type == "survey":
+        paper_steps = [
+            f"{step}. Abstract (core problem and claims)",
+            f"{step+1}. Conclusion (key takeaways)",
+            f"{step+2}. Figures & Tables (visual overview)",
+            f"{step+3}. Introduction (background and motivation)",
+            f"{step+4}. Selected sections of interest",
+        ]
+    elif pd.difficulty == "advanced":
+        paper_steps = [
+            f"{step}. Abstract & Introduction (grasp problem formulation)",
+            f"{step+1}. System Architecture / Main Theorems",
+            f"{step+2}. Experiments & Ablations",
+            f"{step+3}. Related Work & Appendix",
+        ]
+    elif pd.difficulty == "intermediate":
+        paper_steps = [
+            f"{step}. Abstract & Introduction",
+            f"{step+1}. Figures & Tables (intuition first)",
+            f"{step+2}. Methodology overview",
+            f"{step+3}. Conclusion & Future Work",
+        ]
+    else:  # beginner / accessible
+        paper_steps = [
+            f"{step}. Abstract & Introduction",
+            f"{step+1}. System Architecture / Methodology",
+            f"{step+2}. Key Experiments & Results",
+            f"{step+3}. Conclusion & Future Work",
+        ]
+
+    return prereq_steps + paper_steps
 
 
 def create_short_summary(title: str, abstract: str) -> str:

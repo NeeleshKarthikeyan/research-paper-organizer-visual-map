@@ -32,15 +32,21 @@ class TriageAgent:
         else:
             difficulty = tools.estimate_difficulty(requirements, paper.user_level)
 
-        # 4. Decide recommendation and generate public explanation
-        decision, reason = tools.recommend_decision(
-            requirements.paper_type, difficulty, paper.user_level, paper.user_goal
-        )
-
-        # 5. Generate suggested reading path
-        reading_path = tools.generate_reading_path(
-            requirements.paper_type, difficulty, paper.user_level
-        )
+        # 4. Build recommendation and reading path
+        if personalised_difficulty is not None:
+            decision, reason = tools.recommend_with_profile(
+                requirements.paper_type, personalised_difficulty, paper.user_goal
+            )
+            reading_path = tools.generate_reading_path_with_profile(
+                requirements.paper_type, personalised_difficulty
+            )
+        else:
+            decision, reason = tools.recommend_decision(
+                requirements.paper_type, difficulty, paper.user_level, paper.user_goal
+            )
+            reading_path = tools.generate_reading_path(
+                requirements.paper_type, difficulty, paper.user_level
+            )
 
         # 6. Create concise summary
         summary = tools.create_short_summary(paper.title, paper.abstract)
