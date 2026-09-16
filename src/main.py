@@ -96,6 +96,11 @@ def main():
         type=str,
         help="Path to a local PDF file to triage.",
     )
+    parser.add_argument(
+        "--profile",
+        type=str,
+        help="Path to a local JSON file containing a UserProfile.",
+    )
 
     args = parser.parse_args()
 
@@ -119,6 +124,22 @@ def main():
         papers = [paper]
     else:
         papers = run_interactive_mode()
+
+    if args.profile:
+        print(f"[Info] Loading UserProfile from: {args.profile}")
+        if not os.path.exists(args.profile):
+            print(f"Error: Profile file '{args.profile}' does not exist.", file=sys.stderr)
+            sys.exit(1)
+        try:
+            from src.schemas import UserProfile
+            with open(args.profile, "r", encoding="utf-8") as f:
+                profile_data = json.load(f)
+            user_profile = UserProfile(**profile_data)
+            for paper in papers:
+                paper.user_profile = user_profile
+        except Exception as e:
+            print(f"Error reading or parsing profile JSON '{args.profile}': {e}", file=sys.stderr)
+            sys.exit(1)
 
     agent = TriageAgent()
     results = agent.triage_batch(papers)

@@ -92,23 +92,10 @@ def evaluate_paper_analysis(
         det_topics = {t.lower().strip() for t in deterministic_reqs.topic_tags}
         gem_topics = {t.lower().strip() for t in gemini_analysis.topics}
         
+        from src.tools import estimate_difficulty
         # Determine deterministic complexity equivalent
-        det_advanced_count = sum([
-            deterministic_reqs.complexity_signals.has_math_complexity,
-            deterministic_reqs.complexity_signals.has_ml_complexity,
-            deterministic_reqs.complexity_signals.has_systems_complexity,
-            deterministic_reqs.complexity_signals.has_experimental_complexity
-        ])
-        
-        if deterministic_reqs.paper_type in ["theory", "systems"] or det_advanced_count >= 2 or deterministic_reqs.complexity_signals.has_math_complexity:
-            det_complexity = "advanced"
-        elif deterministic_reqs.paper_type == "survey":
-            det_complexity = "beginner"
-        elif deterministic_reqs.paper_type in ["methods", "benchmark"] or det_advanced_count == 1:
-            det_complexity = "intermediate"
-        else:
-            det_complexity = "beginner" # conservative baseline
-            
+        det_complexity = estimate_difficulty(deterministic_reqs, "beginner")
+
         agreement = SystemAgreementMetrics(
             prerequisite_iou=_calculate_iou(det_prereqs, gem_prereqs),
             topic_iou=_calculate_iou(det_topics, gem_topics),
